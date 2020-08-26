@@ -1,0 +1,405 @@
+`timescale 1 ps / 1 fs //1ps clock, 1fs step
+
+/////////MAIN HALF ADDER 
+module half_adder(sum, c_out, a, b);
+   
+   output c_out, sum;
+   input  a,b;
+   
+   xor #70 x0(sum, a, b);
+   and #40 a0(c_out, a, b);
+
+endmodule
+
+////////MAIN FULL ADDER
+module full_adder(sum, c_out, a, b, c_in);
+   
+   output c_out, sum;
+   input  c_in, a, b;
+   wire	  s1, s2, s3;
+   
+   xor x0(s1, a, b);
+   xor #120 x1(sum, s1, c_in);
+   and a0(s2, a, b);
+   and a1(s3, s1, c_in);
+   or  #80 o0(c_out, s2, s3);
+   
+endmodule
+//////////////MUX FOR SELECTING SUM
+module  mux_sum( //0,1,sel,out,
+    input [3:0] sin_0, sin_1,
+    input sel,
+    output [3:0] mux_out
+    );
+    assign #50 mux_out = (sel) ? sin_1 : sin_0;
+endmodule
+//////////////MUX FOR SELECTING CARRY
+module  mux_carry( //0,1,sel,out,
+    input cin_0, cin_1,
+    input sel_carry,
+    output mux_out_c
+    );
+    assign #50 mux_out_c = (sel_carry) ? cin_1 : cin_0;
+endmodule
+
+
+
+//////////MAIN DADDA
+module dadda(inp1, inp2, acc, prod4_0,prod4_1);
+
+    //Partial Product
+    input [7:0] inp1, inp2;
+    input [15:0] acc;    
+    wire [7:0] pp0,pp1,pp2,pp3,pp4,pp5,pp6,pp7;
+
+    assign pp0 = (inp2[0])? inp1 : 8'b00000000;
+    assign pp1 = (inp2[1])? inp1 : 8'b00000000;
+    assign pp2 = (inp2[2])? inp1 : 8'b00000000;
+    assign pp3 = (inp2[3])? inp1 : 8'b00000000;
+    assign pp4 = (inp2[4])? inp1 : 8'b00000000;
+    assign pp5 = (inp2[5])? inp1 : 8'b00000000;
+    assign pp6 = (inp2[6])? inp1 : 8'b00000000;
+    assign pp7 = (inp2[7])? inp1 : 8'b00000000;
+
+///LEVEL 1
+
+wire [15:0] prod1_0,prod1_1,prod1_2,prod1_3,prod1_4,prod1_5;
+
+    assign prod1_0[0] = acc[0];  //Pass through wires
+    assign prod1_1[0] = pp0[0];
+    assign prod1_2[0] = 1'b0;    
+    assign prod1_3[0] = 1'b0;
+    assign prod1_4[0] = 1'b0;
+    assign prod1_5[0] = 1'b0;
+
+    assign prod1_0[1] = acc[1];  //Pass through wires
+    assign prod1_1[1] = pp0[1];
+    assign prod1_2[1] = pp1[0];
+    assign prod1_3[1] = 1'b0;
+    assign prod1_4[1] = 1'b0;
+    assign prod1_5[1] = 1'b0;
+
+    assign prod1_0[2] = acc[2];   //Pass through wires
+    assign prod1_1[2] = pp0[2];
+    assign prod1_2[2] = pp1[1];
+    assign prod1_3[2] = pp2[0];
+    assign prod1_4[2] = 1'b0;
+    assign prod1_5[2] = 1'b0;
+
+    assign prod1_0[3] = acc[3];    //Pass through wires
+    assign prod1_1[3] = pp0[3];
+    assign prod1_2[3] = pp1[2];
+    assign prod1_3[3] = pp2[1];
+    assign prod1_4[3] = pp3[0];
+    assign prod1_5[3] = 1'b0;
+
+    assign prod1_0[4] = acc[4];    //Pass through wires
+    assign prod1_1[4] = pp0[4];
+    assign prod1_2[4] = pp1[3];
+    assign prod1_3[4] = pp2[2];
+    assign prod1_4[4] = pp3[1];
+    assign prod1_5[4] = pp4[0];
+
+
+    half_adder ha0(prod1_0[5],prod1_0[6],acc[5], pp0[5]);
+    assign prod1_1[5] = pp1[4];
+    assign prod1_2[5] = pp2[3];
+    assign prod1_3[5] = pp3[2];
+    assign prod1_4[5] = pp4[1];
+    assign prod1_5[5] = pp5[0];
+
+    half_adder ha1(prod1_1[6],prod1_0[7],acc[6], pp0[6]);
+    full_adder fa1(prod1_2[6],prod1_1[7], pp1[5],pp2[4],pp3[3]);
+    assign prod1_3[6] = pp4[2];
+    assign prod1_4[6] = pp5[1];
+    assign prod1_5[6] = pp6[0];
+
+
+    full_adder fa2(prod1_2[7],prod1_0[8], acc[7],pp0[7],pp1[6]);
+    full_adder fa3(prod1_3[7],prod1_1[8], pp2[5],pp3[4],pp4[3]);
+    half_adder ha2(prod1_4[7],prod1_2[8], pp5[2],pp6[1]);
+    assign prod1_5[7] = pp7[0];
+
+    full_adder fa4(prod1_3[8],prod1_0[9], acc[8],pp1[7],pp2[6]);
+    full_adder fa5(prod1_4[8],prod1_1[9], pp3[5],pp4[4],pp5[3]);
+    half_adder ha3(prod1_5[8],prod1_2[9], pp6[2],pp7[1]);
+
+    full_adder fa6(prod1_3[9],prod1_0[10], acc[9],pp2[7],pp3[6]);
+    full_adder fa7(prod1_4[9],prod1_1[10], pp4[5],pp5[4],pp6[3]);
+    assign prod1_5[9] = pp7[2];
+
+    full_adder fa8(prod1_2[10],prod1_0[11], acc[10],pp3[7],pp4[6]);
+    assign prod1_3[10] = pp5[5];
+    assign prod1_4[10] = pp6[4];
+    assign prod1_5[10] = pp7[3];
+
+
+    assign prod1_1[11] = acc[11];
+    assign prod1_2[11] = pp4[7];
+    assign prod1_3[11] = pp5[6];
+    assign prod1_4[11] = pp6[5];
+    assign prod1_5[11] = pp7[4];
+
+    assign prod1_0[12] = acc[12];
+    assign prod1_1[12] = pp5[7];
+    assign prod1_2[12] = pp6[6];
+    assign prod1_3[12] = pp7[5];
+    assign prod1_4[12] = 1'b0;
+    assign prod1_5[12] = 1'b0;
+
+    assign prod1_0[13] = acc[13];
+    assign prod1_1[13] = pp6[7];
+    assign prod1_2[13] = pp7[6];
+    assign prod1_3[13] = 1'b0;
+    assign prod1_4[13] = 1'b0;
+    assign prod1_5[13] = 1'b0;
+
+    assign prod1_0[14] = acc[14];
+    assign prod1_1[14] = pp7[7];
+    assign prod1_2[14] = 1'b0;
+    assign prod1_3[14] = 1'b0;
+    assign prod1_4[14] = 1'b0;
+    assign prod1_5[14] = 1'b0;
+
+    assign prod1_0[15] = acc[15];
+    assign prod1_1[15] = 1'b0;
+    assign prod1_2[15] = 1'b0;
+    assign prod1_3[15] = 1'b0;
+    assign prod1_4[15] = 1'b0;
+    assign prod1_5[15] = 1'b0;
+
+///LEVEL 2
+
+wire  [15:0] prod2_0,prod2_1,prod2_2,prod2_3;
+
+    assign prod2_0[0] = prod1_0[0];  //Pass through wires
+    assign prod2_1[0] = prod1_1[0];
+    assign prod2_2[0] = 1'b0;    
+    assign prod2_3[0] = 1'b0;
+
+    assign prod2_0[1] = prod1_0[1];
+    assign prod2_1[1] = prod1_1[1];
+    assign prod2_2[1] = prod1_2[1];
+    assign prod2_3[1] = 1'b0;
+
+    assign prod2_0[2] = prod1_0[2];
+    assign prod2_1[2] = prod1_1[2];
+    assign prod2_2[2] = prod1_2[2];
+    assign prod2_3[2] = prod1_3[2];
+
+    half_adder ha4(prod2_0[3],prod2_0[4],prod1_0[3],prod1_1[3]);
+    assign prod2_1[3] = prod1_2[3];
+    assign prod2_2[3] = prod1_3[3];
+    assign prod2_3[3] = prod1_4[3];
+
+    half_adder ha5(prod2_1[4],prod2_0[5], prod1_0[4],prod1_1[4]);
+    full_adder fa24(prod2_2[4],prod2_1[5], prod1_4[4],prod1_3[4],prod1_2[4]);
+    assign prod2_3[4] = prod1_5[4];
+
+    full_adder fa9(prod2_2[5],prod2_0[6], prod1_0[5],prod1_1[5],prod1_2[5]);
+    full_adder fa10(prod2_3[5],prod2_1[6], prod1_3[5],prod1_4[5],prod1_5[5]);
+
+    full_adder fa11(prod2_2[6],prod2_0[7], prod1_0[6],prod1_1[6],prod1_2[6]);
+    full_adder fa12(prod2_3[6],prod2_1[7], prod1_3[6],prod1_4[6],prod1_5[6]);
+
+    full_adder fa13(prod2_2[7],prod2_0[8], prod1_3[7],prod1_1[7],prod1_2[7]);
+    full_adder fa14(prod2_3[7],prod2_1[8], prod1_0[7],prod1_4[7],prod1_5[7]);
+
+    full_adder fa15(prod2_2[8],prod2_0[9], prod1_0[8],prod1_1[8],prod1_2[8]);
+    full_adder fa16(prod2_3[8],prod2_1[9], prod1_3[8],prod1_4[8],prod1_5[8]);
+
+    full_adder fa17(prod2_2[9],prod2_0[10], prod1_0[9],prod1_1[9],prod1_2[9]);
+    full_adder fa18(prod2_3[9],prod2_1[10], prod1_3[9],prod1_4[9],prod1_5[9]);
+
+    full_adder fa19(prod2_2[10],prod2_0[11], prod1_0[10],prod1_1[10],prod1_2[10]);
+    full_adder fa20(prod2_3[10],prod2_1[11], prod1_3[10],prod1_4[10],prod1_5[10]);
+
+    full_adder fa21(prod2_2[11],prod2_0[12], prod1_0[11],prod1_1[11],prod1_2[11]);
+    full_adder fa22(prod2_3[11],prod2_1[12], prod1_3[11],prod1_4[11],prod1_5[11]);
+
+    full_adder fa23(prod2_2[12],prod2_0[13], prod1_0[12],prod1_1[12],prod1_2[12]);
+    assign prod2_3[12] = prod1_3[12];
+
+    assign prod2_1[13] = prod1_0[13];
+    assign prod2_2[13] = prod1_1[13];
+    assign prod2_3[13] = prod1_2[13];
+
+
+    assign prod2_0[14] = prod1_0[14];
+    assign prod2_1[14] = prod1_1[14];
+    assign prod2_2[14] = 1'b0;
+    assign prod2_3[14] = 1'b0;
+
+    assign prod2_0[15] = prod1_0[15];
+    assign prod2_1[15] = 1'b0;
+    assign prod2_2[15] = 1'b0;
+    assign prod2_3[15] = 1'b0;
+
+
+///LEVEL 3
+
+wire  [15:0] prod3_0,prod3_1,prod3_2; 
+
+    assign prod3_0[0] = prod1_0[0];
+    assign prod3_1[0] = prod1_1[0];
+    assign prod3_2[0] = 1'b0;
+
+    assign prod3_0[1] = prod1_0[1];
+    assign prod3_1[1] = prod1_1[1];
+    assign prod3_2[1] = prod1_2[1];
+
+    half_adder ha6(prod3_0[2],prod3_0[3], prod2_1[2],prod2_0[2]);
+    assign prod3_1[2] = prod1_2[2];
+    assign prod3_2[2] = prod1_3[2];
+
+    assign prod3_1[3] = prod2_0[3];
+    full_adder fa25(prod3_2[3],prod3_1[4], prod2_1[3],prod2_2[3],prod2_3[3]);
+
+
+    assign prod3_0[4] = prod2_2[4];
+    full_adder fa26(prod3_2[4],prod3_1[5], prod2_1[4],prod2_0[4],prod2_3[4]);
+
+
+    assign prod3_0[5] = prod2_2[5];
+    full_adder fa27(prod3_2[5],prod3_1[6], prod2_1[5],prod2_0[5],prod2_3[5]);
+
+
+    assign prod3_0[6] = prod2_2[6];
+    full_adder fa28(prod3_2[6],prod3_1[7], prod2_1[6],prod2_0[6],prod2_3[6]);
+
+
+    assign prod3_0[7] = prod2_0[7];
+    full_adder fa29(prod3_2[7],prod3_1[8], prod2_1[7],prod2_2[7],prod2_3[7]);
+
+    assign prod3_0[8] = prod2_0[8];
+    full_adder fa30(prod3_2[8],prod3_1[9], prod2_1[8],prod2_2[8],prod2_3[8]);
+
+    assign prod3_0[9] = prod2_0[9];
+    full_adder fa31(prod3_2[9],prod3_1[10], prod2_1[9],prod2_2[9],prod2_3[9]);
+
+    assign prod3_0[10] = prod2_2[10];
+    full_adder fa32(prod3_2[10],prod3_1[11], prod2_1[10],prod2_0[10],prod2_3[10]);
+
+    assign prod3_0[11] = prod2_0[11];
+    full_adder fa33(prod3_2[11],prod3_1[12], prod2_1[11],prod2_2[11],prod2_3[11]);
+
+    assign prod3_0[12] = prod2_0[12];
+    full_adder fa34(prod3_2[12],prod3_1[13], prod2_1[12],prod2_2[12],prod2_3[12]);
+
+    assign prod3_0[13] = prod2_0[13];
+    full_adder fa35(prod3_2[13],prod3_0[14], prod2_1[13],prod2_2[13],prod2_3[13]);
+
+    assign prod3_1[14] = prod2_0[14];
+    assign prod3_2[14] = prod2_1[14];
+
+    assign prod3_0[15] = prod2_0[15];
+    assign prod3_1[15] = 1'b0;
+    assign prod3_2[15] = 1'b0;
+
+///LEVEL 4
+
+output [15:0] prod4_0,prod4_1;
+
+    assign prod4_0[0] = prod3_0[0];
+    assign prod4_1[0] = prod3_1[0];
+
+
+    half_adder ha7(prod4_0[1],prod4_0[2], prod3_0[1],prod3_1[1]);
+    assign prod4_1[1] = prod3_2[1];
+
+    full_adder fa36(prod4_1[2],prod4_0[3], prod3_0[2],prod3_1[2],prod3_2[2]);
+
+    full_adder fa37(prod4_1[3],prod4_0[4], prod3_0[3],prod3_1[3],prod3_2[3]);
+
+    full_adder fa38(prod4_1[4],prod4_0[5], prod3_0[4],prod3_1[4],prod3_2[4]);
+
+    full_adder fa39(prod4_1[5],prod4_0[6], prod3_0[5],prod3_1[5],prod3_2[5]);
+
+    full_adder fa40(prod4_1[6],prod4_0[7], prod3_0[6],prod3_1[6],prod3_2[6]);
+
+    full_adder fa41(prod4_1[7],prod4_0[8], prod3_0[7],prod3_1[7],prod3_2[7]);
+
+    full_adder fa42(prod4_1[8],prod4_0[9], prod3_0[8],prod3_1[8],prod3_2[8]);
+
+    full_adder fa43(prod4_1[9],prod4_0[10], prod3_0[9],prod3_1[9],prod3_2[9]);
+
+    full_adder fa44(prod4_1[10],prod4_0[11], prod3_0[10],prod3_1[10],prod3_2[10]);
+
+    full_adder fa45(prod4_1[11],prod4_0[12], prod3_0[11],prod3_1[11],prod3_2[11]);
+
+    full_adder fa46(prod4_1[12],prod4_0[13], prod3_0[12],prod3_1[12],prod3_2[12]);
+
+    full_adder fa47(prod4_1[13],prod4_0[14], prod3_0[13],prod3_1[13],prod3_2[13]);
+
+    full_adder fa48(prod4_1[14],prod4_0[15], prod3_0[14],prod3_1[14],prod3_2[14]);
+
+
+    assign prod4_1[15] = prod3_0[15];
+
+
+endmodule
+
+
+module add4bit(
+    input [3:0] A, B,
+    output [3:0] sum_carry0, sum_carry1,
+    output add_carry0_out, add_carry1_out
+    );
+    
+    wire [2:0] carry0_array, carry1_array;
+    
+    full_adder adder_fa1(sum_carry0[0], carry0_array[0], A[0], B[0], 0);
+    full_adder adder_fa2(sum_carry0[1], carry0_array[1], A[1], B[1], carry0_array[0]);
+    full_adder adder_fa3(sum_carry0[2], carry0_array[2], A[2], B[2], carry0_array[1]);
+    full_adder adder_fa4(sum_carry0[3], add_carry0_out, A[3], B[3], carry0_array[2]);
+
+    full_adder adder_fa5(sum_carry1[0], carry1_array[0], A[0], B[0], 1);
+    full_adder adder_fa6(sum_carry1[1], carry1_array[1], A[1], B[1], carry1_array[0]);
+    full_adder adder_fa7(sum_carry1[2], carry1_array[2], A[2], B[2], carry1_array[1]);
+    full_adder adder_fa8(sum_carry1[3], add_carry1_out, A[3], B[3], carry1_array[2]);
+
+endmodule
+
+module carryseladd(
+    input [15:0] in1, in2,
+    output [16:0] result
+    );
+
+    wire [4:0] carry0_out, carry1_out;
+    wire [3:0] A1,B1,A2,B2,A3,B3,A4,B4;
+    wire [3:0] sumc0_1,sumc0_2,sumc0_3,sumc0_4, sumc1_1,sumc1_2,sumc1_3,sumc1_4;
+    wire [3:0] temp0,temp2,temp3;
+    wire temp4,temp5,temp6,temp7;
+
+    //Distribution of inputs to different 4-bit wires
+    assign A1 = {in1[3],in1[2],in1[1],in1[0]};
+    assign A2 = {in1[7],in1[6],in1[5],in1[4]};
+    assign A3 = {in1[11],in1[10],in1[9],in1[8]};
+    assign A4 = {in1[15],in1[14],in1[13],in1[12]};
+    assign B1 = {in2[3],in2[2],in2[1],in2[0]};
+    assign B2 = {in2[7],in2[6],in2[5],in2[4]};
+    assign B3 = {in2[11],in2[10],in2[9],in2[8]};
+    assign B4 = {in2[15],in2[14],in2[13],in2[12]};
+
+
+    add4bit csa_add1(A1,B1,sumc0_1,sumc1_1,carry0_out[0],carry1_out[0]);
+    assign {result[3],result[2],result[1],result[0]} = sumc0_1; 
+    
+    add4bit csa_add2(A2,B2,sumc0_2,sumc1_2,carry0_out[1],carry1_out[1]);
+    mux_sum mux1(sumc0_2,sumc1_2,carry0_out[0],temp0);
+    mux_carry mux2(carry0_out[1],carry1_out[1],carry0_out[0],temp4);
+    assign {result[7],result[6],result[5],result[4]} = temp0;
+    
+    add4bit csa_add3(A3,B3,sumc0_3,sumc1_3,carry0_out[2],carry1_out[2]);
+    mux_sum mux3(sumc0_3,sumc1_3,temp4,temp2);
+    mux_carry mux4(carry0_out[2],carry1_out[2],temp4,temp5);
+    assign {result[11],result[10],result[9],result[8]} = temp2;
+
+    add4bit csa_add4(A4,B4,sumc0_4,sumc1_4,carry0_out[3],carry1_out[3]);
+    mux_sum mux5(sumc0_4,sumc1_4,temp5,temp3);
+    mux_carry mux6(carry0_out[3],carry1_out[3],temp5,temp6);
+    assign {result[15],result[14],result[13],result[12]} = temp3;
+    assign result[16] = temp6;
+
+endmodule
+

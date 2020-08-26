@@ -1,0 +1,22 @@
+C:/Users/Apoorv/Desktop/Resume_verification/Self_projects/Dadda/Dadda/Dadda.v {1 {vlog -work work -stats=none C:/Users/Apoorv/Desktop/Resume_verification/Self_projects/Dadda/Dadda/Dadda.v
+Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+-- Compiling module half_adder
+-- Compiling module full_adder
+-- Compiling module mux_sum
+-- Compiling module mux_carry
+-- Compiling module dadda
+-- Compiling module add4bit
+-- Compiling module carryseladd
+
+Top level modules:
+	dadda
+	carryseladd
+
+} {} {}} C:/Users/Apoorv/Desktop/Resume_verification/Self_projects/Dadda/Dadda/Dadda_tb.v {1 {vlog -work work -stats=none C:/Users/Apoorv/Desktop/Resume_verification/Self_projects/Dadda/Dadda/Dadda_tb.v
+Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+-- Compiling module test_bench
+
+Top level modules:
+	test_bench
+
+} {} {}}
